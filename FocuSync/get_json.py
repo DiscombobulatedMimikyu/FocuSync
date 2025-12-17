@@ -1,44 +1,48 @@
 import json
 import os
 
-# Retrieve JSON data
-def get_data(file_name='tasks'):
-    # ile path 
-    file_path = fr'C:\Users\gary\OneDrive\Desktop\FocuSync\data\{file_name}.json'
+user = ""
+DATA_FILE = ""
 
-    # Check if the file exists
-    if os.path.exists(file_path):
-        try:
-            # Open the file in read mode
-            with open(file_path, 'r') as f:
-                # Load the JSON data from the file
-                file_data = json.load(f)
-                # Return the loaded data
-                return file_data
-        except:
-            # Return None if the file is empty or invalid JSON
-            return None
-    else:
-        # Return error message if file doesn't exist
-        return "file not found"
+def get_name(name):
+    global user, DATA_FILE
+    user = name
+    DATA_FILE = f"data/{user}.json"
 
+    # Ensure the data folder exists
+    os.makedirs("data", exist_ok=True)
 
-# Get a list of values for a specific key
-def key_data(key='title'):
-    # Retrieve the JSON data
-    json_data = get_data()
+    # If file doesn't exist, create with initial structure
+    if not os.path.exists(DATA_FILE):
+        initial_data = {
+            "tasks": [],
+            "points": 0
+        }
+        with open(DATA_FILE, "w") as f:
+            json.dump(initial_data, f, indent=4)
 
-    # Empty list to store key values
-    key_list = []
+def save_data(tasks=None, points=None):
+    if not DATA_FILE:
+        return
 
-    # If data exists
-    if json_data:
-        # Collect the value of the specified key
-        for items in json_data:
-            key_list.append(items.get(key))
+    os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
 
-        # Return values
-        return key_list
-    else:
-        # Return None if JSON data is empty
-        return None
+    # Load existing data if file exists
+    data = {"tasks": [], "points": 0}
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r") as f:
+            data = json.load(f)
+
+    if tasks is not None:
+        data["tasks"] = tasks
+    if points is not None:
+        data["points"] = points
+
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+def load_data():
+    if not DATA_FILE or not os.path.exists(DATA_FILE):
+        return {"tasks": [], "points": 0}
+    with open(DATA_FILE, "r") as f:
+        return json.load(f)

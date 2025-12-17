@@ -1,37 +1,42 @@
-#include "SoftwareSerial.h"
-SoftwareSerial serial_connection(10, 11);//Create a serial connection with TX and RX on these pins
-const int buzzer = 9;
-const int led = 7;
-void setup()
-{
-  pinMode(buzzer, OUTPUT); // Setup the pin7 as output
+#include <SoftwareSerial.h>
+SoftwareSerial bt(10,11);
+
+int buzzer = 9;
+int led = 7;
+
+bool alarmActive = false;
+unsigned long lastToggle = 0;
+int interval = 300;
+bool state = false;
+
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(buzzer, OUTPUT);
   pinMode(led, OUTPUT);
-  digitalWrite(buzzer, LOW);
-  digitalWrite(led, LOW);
-  Serial.begin(9600);//Initialize communications to the serial monitor in the Arduino IDE
-  serial_connection.begin(9600);//Initialize communications with the bluetooth module
-  serial_connection.println("Ready!!!");//Send something to just start comms. This will never be seen.
-  Serial.println("Started");//Tell the serial monitor that the sketch has started.
+  bt.begin(9600);
 }
+
 void loop() {
-  if(serial_connection.available()) {
-    char cmd = serial_connection.read();
-  
-    if (cmd == '1')
-    {
-      Serial.println("********* Transmission Started *********");
-      digitalWrite(buzzer, HIGH);
-      tone(buzzer, 1000); // Send 1KHz sound signal...
-      delay(1000);         // ...for 1 sec
-      noTone(buzzer);     // Stop sound...
-      delay(1000);         // ...for 1sec
-      digitalWrite(led, HIGH);
+  // put your main code here, to run repeatedly:
+  if(bt.available()) {
+    String cmd = bt.readStringUntil('\n');
+
+    if(cmd == "START") {
+      alarmActive = true;
     }
-    if (cmd == '0')
-    {
-      Serial.println("********* Transmission Ended *********");
-      digitalWrite(buzzer, LOW); // end buzz
+    else if (cmd == "STOP") {
+      alarmActive = false;
+      digitalWrite(buzzer, LOW);
+      digitalWrite(led, LOW);
     }
   }
-  delay(100);
+
+  if (alarmActive) {
+    if (millis() - lastToggle >= interval){
+      lastToggle = millis();
+      state = !state;
+      digitalWrite(buzzer, state);
+      digitalWrite(led, state);
+    }
+  }
 }
